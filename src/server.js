@@ -1,8 +1,12 @@
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
+import fs from "fs";
 
-const app = require("./app");
+console.log("ENV FILE EXISTS:", fs.existsSync(".env"));
+import app from "./app.js";
+import mongoose from "mongoose";
 
-const connectDB = require("./config/db");
+import { connectDB } from "./config/db.js";
 
 const PORT = process.env.PORT || 5000;
 

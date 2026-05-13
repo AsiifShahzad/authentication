@@ -1,8 +1,2 @@
-const otpTemplate = require("./otp.template");
-
-const welcomeTemplate = require("./welcome.template");
-
-module.exports = {
-  otpTemplate,
-  welcomeTemplate,
-};
+export { otpTemplate } from "./otp.template.js";
+export { welcomeTemplate } from "./welcome.template.js";

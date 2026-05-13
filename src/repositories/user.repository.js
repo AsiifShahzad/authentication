@@ -1,14 +1,16 @@
-const User = require("../models/user.model");
+import User from "../models/user.model.js";
 
-const findUserByEmail = async (email) => {
+// FIND USER BY EMAIL
+export const findUserByEmail = async (email) => {
   return User.findOne({ email });
 };
 
-const createUser = async (payload) => {
-  return User.create(payload);
+// FIND USER WITH PASSWORD (FOR LOGIN)
+export const findUserByEmailWithPassword = async (email) => {
+  return User.findOne({ email }).select("+password");
 };
 
-module.exports = {
-  findUserByEmail,
-  createUser,
+// CREATE USER
+export const createUser = async (payload) => {
+  return User.create(payload);
 };

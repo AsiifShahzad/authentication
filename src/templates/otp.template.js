@@ -1,7 +1,8 @@
-const otpTemplate = ({
+export const otpTemplate = ({
   username,
   otp,
   expiryMinutes = 15,
+  purpose = "ACCOUNT VERIFICATION",
 }) => {
   return `
     <div
@@ -12,10 +13,11 @@ const otpTemplate = ({
         padding: 20px;
         border: 1px solid #e5e5e5;
         border-radius: 10px;
+        background-color: #ffffff;
       "
     >
-      <h2 style="color: #333;">
-        OTP Verification
+      <h2 style="color: #333; text-align:center;">
+        ${purpose}
       </h2>
 
       <p>Hello ${username || "User"},</p>
@@ -30,6 +32,8 @@ const otpTemplate = ({
           font-weight: bold;
           color: #2563eb;
           margin: 20px 0;
+          text-align: center;
+          letter-spacing: 5px;
         "
       >
         ${otp}
@@ -37,15 +41,12 @@ const otpTemplate = ({
 
       <p>
         This OTP will expire in
-        ${expiryMinutes} minutes.
+        <b>${expiryMinutes} minutes</b>.
       </p>
 
-      <p>
-        If you did not request this,
-        please ignore this email.
+      <p style="color: #777;">
+        If you did not request this, please ignore this email.
       </p>
     </div>
   `;
 };
-
-module.exports = otpTemplate;

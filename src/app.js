@@ -1,8 +1,8 @@
-const express = require("express");
+import express from "express";
 
-const authRoutes = require("./routes/auth.routes");
+import authRoutes from "./routes/auth.routes.js";
 
-const errorMiddleware = require("./middlewares/error.middleware");
+import errorMiddleware from "./middlewares/error.middleware.js";
 
 const app = express();
 
@@ -14,4 +14,4 @@ console.log("errorMiddleware loaded:", typeof errorMiddleware);
 app.use("/api/v1/auth", authRoutes);
 app.use(errorMiddleware);
 
-module.exports = app;
+export default app;

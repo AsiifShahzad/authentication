@@ -4,13 +4,16 @@ const validate = (schema) => (req, res, next) => {
   if (!result.success) {
     return res.status(400).json({
       success: false,
-      message: result.error.issues[0].message,
+      message: "Validation Error",
+      errors: result.error.issues.map((issue) => ({
+        field: issue.path[0],
+        message: issue.message,
+      })),
     });
   }
 
   req.validatedData = result.data;
-
   next();
 };
 
-module.exports = validate;
+export default validate;

@@ -1,29 +1,48 @@
-const ApiError = require("../utils/ApiError");
+import ApiError from "../utils/ApiError.js";
 
-const {
+import {
   findUserByEmail,
+  findUserByEmailWithPassword,
   createUser,
-} = require("../repositories/user.repository");
+} from "../repositories/user.repository.js";
 
-const { hashPassword } = require("../utils/hash.util");
+import {
+  hashPassword,
+  comparePassword,
+} from "../utils/hash.util.js";
 
-const { createOTP } = require("./otp.service");
+import {
+  createOTP,
+  verifyOTP,
+} from "./otp.service.js";
 
-const { sendEmail } = require("./mail.service");
+import { sendEmail } from "./mail.service.js";
 
-const { welcomeTemplate } = require("../templates"); 
-const signupService = async ({ username, email, password }) => {
-  // 1. Check if user already exists
+import { generateToken } from "../utils/jwt.util.js";
+
+import OTP from "../models/otp.model.js";
+
+import User from "../models/user.model.js";
+
+/* =========================
+   SIGNUP SERVICE
+========================= */
+export const signupService = async ({
+  username,
+  email,
+  password,
+}) => {
   const existingUser = await findUserByEmail(email);
 
   if (existingUser) {
-    throw new ApiError(409, "Email already registered");
+    throw new ApiError(
+      409,
+      "Email already registered"
+    );
   }
 
-  // 2. Hash password
   const hashedPassword = await hashPassword(password);
 
-  // 3. Create user (unverified)
   const user = await createUser({
     username,
     email,
@@ -31,10 +50,8 @@ const signupService = async ({ username, email, password }) => {
     isVerified: false,
   });
 
-  // 4. Generate OTP
-  const otp = await createOTP(email);
+  const otp = await createOTP(email, "SIGNUP");
 
-  // 5. Send OTP using TEMPLATE ROUTER
   await sendEmail({
     to: email,
     type: "OTP_VERIFICATION",
@@ -45,7 +62,6 @@ const signupService = async ({ username, email, password }) => {
     },
   });
 
-  // 6. Return safe response
   return {
     id: user._id,
     username: user.username,
@@ -54,6 +70,153 @@ const signupService = async ({ username, email, password }) => {
   };
 };
 
-module.exports = {
-  signupService,
+/* =========================
+   LOGIN SERVICE
+========================= */
+export const loginService = async ({
+  email,
+  password,
+}) => {
+  const user =
+    await findUserByEmailWithPassword(email);
+
+  if (!user) {
+    throw new ApiError(
+      401,
+      "Invalid email or password"
+    );
+  }
+
+  if (!user.isVerified) {
+    throw new ApiError(
+      403,
+      "Please verify your email first"
+    );
+  }
+
+  const isPasswordValid =
+    await comparePassword(
+      password,
+      user.password
+    );
+
+  if (!isPasswordValid) {
+    throw new ApiError(
+      401,
+      "Invalid email or password"
+    );
+  }
+
+  const token = generateToken({
+    id: user._id,
+    email: user.email,
+  });
+
+  return {
+    token,
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+    },
+  };
+};
+
+/* =========================
+   FORGOT PASSWORD
+========================= */
+export const forgotPasswordService = async ({
+  email,
+}) => {
+  const user = await findUserByEmail(email);
+
+  if (!user) {
+    throw new ApiError(
+      404,
+      "User not found"
+    );
+  }
+
+  const otp = await createOTP(
+    email,
+    "PASSWORD_RESET"
+  );
+
+  await sendEmail({
+    to: email,
+    type: "PASSWORD_RESET",
+    data: {
+      username: user.username,
+      otp,
+      expiryMinutes: 15,
+    },
+  });
+
+  return {
+    message:
+      "Password reset OTP sent to email",
+  };
+};
+
+/* =========================
+   VERIFY RESET OTP
+========================= */
+export const verifyResetOTPService = async ({
+  email,
+  otp,
+}) => {
+  const result = await verifyOTP(
+    email,
+    otp,
+    "PASSWORD_RESET"
+  );
+
+  if (!result.valid) {
+    throw new ApiError(
+      400,
+      result.message
+    );
+  }
+
+  return {
+    message: "OTP verified successfully",
+  };
+};
+
+/* =========================
+   RESET PASSWORD
+========================= */
+export const resetPasswordService = async ({
+  email,
+  otp,
+  newPassword,
+}) => {
+  const result = await verifyOTP(
+    email,
+    otp,
+    "PASSWORD_RESET"
+  );
+
+  if (!result.valid) {
+    throw new ApiError(
+      400,
+      result.message
+    );
+  }
+
+  const hashed =
+    await hashPassword(newPassword);
+
+  await User.updateOne(
+    { email },
+    { password: hashed }
+  );
+
+  // Delete OTP after password reset completes
+  await OTP.deleteOne({ email, type: "PASSWORD_RESET" });
+
+  return {
+    message:
+      "Password reset successful",
+  };
 };

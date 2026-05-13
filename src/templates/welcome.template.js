@@ -1,4 +1,4 @@
-const welcomeTemplate = ({ username }) => {
+export const welcomeTemplate = ({ username }) => {
   return `
     <div
       style="
@@ -11,7 +11,7 @@ const welcomeTemplate = ({ username }) => {
       "
     >
       <h2 style="color: #16a34a;">
-        Welcome to Our Platform 🎉
+        Welcome to Our Platform
       </h2>
 
       <p>
@@ -32,5 +32,3 @@ const welcomeTemplate = ({ username }) => {
     </div>
   `;
 };
-
-module.exports = welcomeTemplate;

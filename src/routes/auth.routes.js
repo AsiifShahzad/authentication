@@ -1,21 +1,80 @@
-const express = require("express");
+import express from "express";
 
 const router = express.Router();
 
-const validate = require("../middlewares/validate.middleware");
+import validate from "../middlewares/validate.middleware.js";
 
-const { signupSchema } = require("../validators/auth.validator");
+import {
+  signupSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  verifyResetOTPSchema,
+  resetPasswordSchema,
+} from "../validators/auth.validator.js";
 
-const {
+import {
   signupController,
+  loginController,
   verifyEmailController,
   resendOTPController,
-} = require("../controllers/auth.controller");
+  forgotPasswordController,
+  verifyResetOTPController,
+  resetPasswordController,
+} from "../controllers/auth.controller.js";
 
-router.post("/signup", validate(signupSchema), signupController );
+/* =========================
+   AUTH ROUTES
+========================= */
 
-router.post("/verify-email", verifyEmailController);
+// SIGNUP
+router.post(
+  "/signup",
+  validate(signupSchema),
+  signupController
+);
 
-router.post("/resend-otp", resendOTPController);
+// LOGIN
+router.post(
+  "/login",
+  validate(loginSchema),
+  loginController
+);
 
-module.exports = router;
+// VERIFY EMAIL (OTP)
+router.post(
+  "/verify-email",
+  verifyEmailController
+);
+
+// RESEND OTP
+router.post(
+  "/resend-otp",
+  resendOTPController
+);
+
+/* =========================
+   FORGOT PASSWORD FLOW
+========================= */
+
+// 1. REQUEST RESET OTP
+router.post(
+  "/forgot-password",
+  validate(forgotPasswordSchema),
+  forgotPasswordController
+);
+
+// 2. VERIFY RESET OTP
+router.post(
+  "/verify-reset-otp",
+  validate(verifyResetOTPSchema),
+  verifyResetOTPController
+);
+
+// 3. RESET PASSWORD
+router.post(
+  "/reset-password",
+  validate(resetPasswordSchema),
+  resetPasswordController
+);
+
+export default router;

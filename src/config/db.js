@@ -1,12 +1,17 @@
-const path = require("path");
+import path from "path";
+import { fileURLToPath } from "url";
 
-require("dotenv").config({
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+import dotenv from "dotenv";
+
+dotenv.config({
   path: path.resolve(__dirname, "../../.env"),
 });
 
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-async function connectDB() {
+export async function connectDB() {
   console.log(
     "MONGO_URI loaded:",
     process.env.MONGO_URI ? "Found" : "MISSING"
@@ -33,5 +38,3 @@ async function connectDB() {
     process.exit(1);
   }
 }
-
-module.exports = connectDB;

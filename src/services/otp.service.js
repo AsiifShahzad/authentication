@@ -1,26 +1,38 @@
 console.log("OTP SERVICE LOADED");
 
-const OTP = require("../models/otp.model");
-const { generateOTP } = require("../utils/otp.util");
+import OTP from "../models/otp.model.js";
+import { generateOTP } from "../utils/otp.util.js";
 
-const createOTP = async (email) => {
+/* =========================
+   CREATE OTP
+========================= */
+export const createOTP = async (email, type = "EMAIL_VERIFICATION") => {
   const otp = generateOTP();
 
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   await OTP.findOneAndUpdate(
-    { email },
-    { otp, expiresAt, attempts: 0 },
+    { email, type },
+    {
+      otp,
+      expiresAt,
+      attempts: 0,
+    },
     { upsert: true, new: true }
   );
 
   return otp;
 };
 
-const verifyOTP = async (email, otp) => {
-  const record = await OTP.findOne({ email });
+/* =========================
+   VERIFY OTP
+========================= */
+export const verifyOTP = async (email, otp, type = "EMAIL_VERIFICATION") => {
+  const record = await OTP.findOne({ email, type });
 
-  if (!record) return { valid: false, message: "OTP not found" };
+  if (!record) {
+    return { valid: false, message: "OTP not found" };
+  }
 
   if (record.expiresAt < new Date()) {
     return { valid: false, message: "OTP expired" };
@@ -30,35 +42,26 @@ const verifyOTP = async (email, otp) => {
     return { valid: false, message: "Invalid OTP" };
   }
 
-  await OTP.deleteOne({ email });
-
   return { valid: true };
 };
 
-const resendOTPService = async (email) => {
+/* =========================
+   RESEND OTP
+========================= */
+export const resendOTPService = async (email, type = "EMAIL_VERIFICATION") => {
   const otp = generateOTP();
-  console.log("RESEND FUNCTION EXISTS");
+
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-  // overwrite existing OTP
   await OTP.findOneAndUpdate(
-    { email },
+    { email, type },
     {
       otp,
       expiresAt,
       attempts: 0,
     },
-    {
-      upsert: true,
-      new: true,
-    }
+    { upsert: true, new: true }
   );
 
   return otp;
-};
-
-module.exports = {
-  createOTP,
-  verifyOTP,
-  resendOTPService,
 };
