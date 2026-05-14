@@ -24,9 +24,7 @@ import OTP from "../models/otp.model.js";
 
 import User from "../models/user.model.js";
 
-/* =========================
-   SIGNUP SERVICE
-========================= */
+//SIGNUP SERVICE
 export const signupService = async ({
   username,
   email,
@@ -50,7 +48,7 @@ export const signupService = async ({
     isVerified: false,
   });
 
-  const otp = await createOTP(email, "SIGNUP");
+  const otp = await createOTP(email, "EMAIL_VERIFICATION");
 
   await sendEmail({
     to: email,
@@ -70,9 +68,8 @@ export const signupService = async ({
   };
 };
 
-/* =========================
-   LOGIN SERVICE
-========================= */
+//LOGIN SERVICE
+
 export const loginService = async ({
   email,
   password,
@@ -122,9 +119,7 @@ export const loginService = async ({
   };
 };
 
-/* =========================
-   FORGOT PASSWORD
-========================= */
+//FORGOT PASSWORD
 export const forgotPasswordService = async ({
   email,
 }) => {
@@ -158,9 +153,7 @@ export const forgotPasswordService = async ({
   };
 };
 
-/* =========================
-   VERIFY RESET OTP
-========================= */
+//VERIFY RESET OTP
 export const verifyResetOTPService = async ({
   email,
   otp,
@@ -183,9 +176,7 @@ export const verifyResetOTPService = async ({
   };
 };
 
-/* =========================
-   RESET PASSWORD
-========================= */
+//RESET PASSWORD
 export const resetPasswordService = async ({
   email,
   otp,

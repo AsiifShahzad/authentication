@@ -27,9 +27,7 @@ const getTransporter = () => {
  */
 const getTemplate = (type, data) => {
   switch (type) {
-    // =========================
     // SIGNUP OTP
-    // =========================
     case "OTP_VERIFICATION":
       return {
         subject: "Verify Your Email",
@@ -39,9 +37,7 @@ const getTemplate = (type, data) => {
         }),
       };
 
-    // =========================
     // FORGOT PASSWORD OTP (NEW)
-    // =========================
     case "PASSWORD_RESET":
       return {
         subject: "Reset Your Password 🔐",
@@ -51,9 +47,7 @@ const getTemplate = (type, data) => {
         }),
       };
 
-    // =========================
     // WELCOME EMAIL
-    // =========================
     case "WELCOME_EMAIL":
       return {
         subject: "Welcome to Our Platform 🎉",
@@ -67,9 +61,8 @@ const getTemplate = (type, data) => {
   }
 };
 
-/**
- * SEND EMAIL
- */
+
+ //SEND EMAIL
 export const sendEmail = async ({
   to,
   type,

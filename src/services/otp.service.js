@@ -3,9 +3,8 @@ console.log("OTP SERVICE LOADED");
 import OTP from "../models/otp.model.js";
 import { generateOTP } from "../utils/otp.util.js";
 
-/* =========================
-   CREATE OTP
-========================= */
+//CREATE OTP
+
 export const createOTP = async (email, type = "EMAIL_VERIFICATION") => {
   const otp = generateOTP();
 
@@ -24,9 +23,7 @@ export const createOTP = async (email, type = "EMAIL_VERIFICATION") => {
   return otp;
 };
 
-/* =========================
-   VERIFY OTP
-========================= */
+//VERIFY OTP
 export const verifyOTP = async (email, otp, type = "EMAIL_VERIFICATION") => {
   const record = await OTP.findOne({ email, type });
 
@@ -45,9 +42,7 @@ export const verifyOTP = async (email, otp, type = "EMAIL_VERIFICATION") => {
   return { valid: true };
 };
 
-/* =========================
-   RESEND OTP
-========================= */
+//RESEND OTP
 export const resendOTPService = async (email, type = "EMAIL_VERIFICATION") => {
   const otp = generateOTP();
 

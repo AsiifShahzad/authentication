@@ -22,10 +22,6 @@ import {
   resetPasswordController,
 } from "../controllers/auth.controller.js";
 
-/* =========================
-   AUTH ROUTES
-========================= */
-
 // SIGNUP
 router.post(
   "/signup",
@@ -52,9 +48,7 @@ router.post(
   resendOTPController
 );
 
-/* =========================
-   FORGOT PASSWORD FLOW
-========================= */
+//FORGOT PASSWORD FLOW
 
 // 1. REQUEST RESET OTP
 router.post(

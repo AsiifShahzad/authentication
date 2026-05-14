@@ -1,8 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-import fs from "fs";
 
-console.log("ENV FILE EXISTS:", fs.existsSync(".env"));
 import app from "./app.js";
 import mongoose from "mongoose";
 

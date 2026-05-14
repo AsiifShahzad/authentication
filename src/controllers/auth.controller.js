@@ -20,9 +20,7 @@ import { sendEmail } from "../services/mail.service.js";
 
 import OTP from "../models/otp.model.js";
 
-/* =========================
-   SIGNUP CONTROLLER
-========================= */
+//SIGNUP CONTROLLER
 export const signupController = asyncHandler(async (req, res) => {
   const result = await signupService(req.validatedData);
 
@@ -31,9 +29,7 @@ export const signupController = asyncHandler(async (req, res) => {
   );
 });
 
-/* =========================
-   LOGIN CONTROLLER
-========================= */
+//LOGIN CONTROLLER
 export const loginController = asyncHandler(async (req, res) => {
   const result = await loginService(req.validatedData);
 
@@ -42,9 +38,7 @@ export const loginController = asyncHandler(async (req, res) => {
   );
 });
 
-/* =========================
-   VERIFY EMAIL CONTROLLER
-========================= */
+//VERIFY EMAIL CONTROLLER
 export const verifyEmailController = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
 
@@ -81,9 +75,7 @@ export const verifyEmailController = asyncHandler(async (req, res) => {
   );
 });
 
-/* =========================
-   RESEND OTP CONTROLLER
-========================= */
+//RESEND OTP CONTROLLER
 export const resendOTPController = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
@@ -106,9 +98,7 @@ export const resendOTPController = asyncHandler(async (req, res) => {
   );
 });
 
-/* =========================
-   FORGOT PASSWORD CONTROLLER
-========================= */
+//FORGOT PASSWORD CONTROLLER
 export const forgotPasswordController = asyncHandler(async (req, res) => {
   const result = await forgotPasswordService(req.validatedData);
 
@@ -117,9 +107,7 @@ export const forgotPasswordController = asyncHandler(async (req, res) => {
   );
 });
 
-/* =========================
-   VERIFY RESET OTP CONTROLLER
-========================= */
+//VERIFY RESET OTP CONTROLLER
 export const verifyResetOTPController = asyncHandler(async (req, res) => {
   const result = await verifyResetOTPService(req.validatedData);
 
@@ -128,9 +116,7 @@ export const verifyResetOTPController = asyncHandler(async (req, res) => {
   );
 });
 
-/* =========================
-   RESET PASSWORD CONTROLLER
-========================= */
+//RESET PASSWORD CONTROLLER
 export const resetPasswordController = asyncHandler(async (req, res) => {
   const result = await resetPasswordService(req.validatedData);
 
