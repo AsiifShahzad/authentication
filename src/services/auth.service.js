@@ -50,7 +50,7 @@ export const signupService = async ({
 
   const otp = await createOTP(email, "EMAIL_VERIFICATION");
 
-  await sendEmail({
+  sendEmail({
     to: email,
     type: "OTP_VERIFICATION",
     data: {
@@ -58,6 +58,8 @@ export const signupService = async ({
       otp,
       expiryMinutes: 15,
     },
+  }).catch((err) => {
+    console.error(`Failed to send signup OTP to ${email}:`, err);
   });
 
   return {
@@ -137,7 +139,7 @@ export const forgotPasswordService = async ({
     "PASSWORD_RESET"
   );
 
-  await sendEmail({
+  sendEmail({
     to: email,
     type: "PASSWORD_RESET",
     data: {
@@ -145,6 +147,8 @@ export const forgotPasswordService = async ({
       otp,
       expiryMinutes: 15,
     },
+  }).catch((err) => {
+    console.error(`Failed to send password reset email to ${email}:`, err);
   });
 
   return {
@@ -195,19 +199,17 @@ export const resetPasswordService = async ({
     );
   }
 
-  const hashed =
-    await hashPassword(newPassword);
+  const hashed = await hashPassword(newPassword);
 
-  await User.updateOne(
-    { email },
-    { password: hashed }
-  );
-
-  // Delete OTP after password reset completes
-  await OTP.deleteOne({ email, type: "PASSWORD_RESET" });
+  await Promise.all([
+    User.updateOne(
+      { email },
+      { password: hashed }
+    ),
+    OTP.deleteOne({ email, type: "PASSWORD_RESET" })
+  ]);
 
   return {
-    message:
-      "Password reset successful",
+    message: "Password reset successful",
   };
 };

@@ -14,6 +14,7 @@ import {
   resendOTPService,
 } from "../services/otp.service.js";
 
+
 import User from "../models/user.model.js";
 
 import { sendEmail } from "../services/mail.service.js";
@@ -53,22 +54,23 @@ export const verifyEmailController = asyncHandler(async (req, res) => {
     );
   }
 
-  // mark user as verified
-  await User.updateOne({ email: normalizedEmail }, { isVerified: true });
+  // Parallelize: updateOne, findOne, deleteOne together (instead of sequential)
+  const [, user] = await Promise.all([
+    User.updateOne({ email: normalizedEmail }, { isVerified: true }),
+    User.findOne({ email: normalizedEmail }),
+    OTP.deleteOne({ email: normalizedEmail, type: "EMAIL_VERIFICATION" })
+  ]);
 
-  const user = await User.findOne({ email: normalizedEmail });
-
-  // send welcome email
-  await sendEmail({
+  // Fire-and-forget: send welcome email asynchronously (remove await)
+  sendEmail({
     to: normalizedEmail,
     type: "WELCOME_EMAIL",
     data: {
       username: user.username,
     },
+  }).catch((err) => {
+    console.error(`Failed to send welcome email to ${normalizedEmail}:`, err);
   });
-
-  // Delete OTP after email verification completes
-  await OTP.deleteOne({ email: normalizedEmail, type: "EMAIL_VERIFICATION" });
 
   return res.status(200).json(
     new ApiResponse(200, "Email verified successfully", null)
@@ -84,13 +86,15 @@ export const resendOTPController = asyncHandler(async (req, res) => {
 
   const otp = await resendOTPService(normalizedEmail);
 
-  await sendEmail({
+  sendEmail({
     to: normalizedEmail,
     type: "OTP_VERIFICATION",
     data: {
       otp,
       expiryMinutes: 15,
     },
+  }).catch((err) => {
+    console.error(`Failed to send OTP to ${normalizedEmail}:`, err);
   });
 
   return res.status(200).json(
