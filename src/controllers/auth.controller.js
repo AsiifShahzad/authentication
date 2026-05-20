@@ -1,10 +1,12 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import ApiError from "../utils/ApiError.js";
 
 import {
   signupService,
   loginService,
   profileUpdateService,
+  avatarUpdateService,
   forgotPasswordService,
   verifyResetOTPService,
   resetPasswordService,
@@ -93,6 +95,19 @@ export const profileUpdateController = asyncHandler(async (req, res) => {
   const result = await profileUpdateService(userId, req.validatedData);
   return res.status(200).json(
     new ApiResponse(200, "Profile updated successfully", result)
+  );
+});
+
+//AVATAR CONTROLLER
+export const avatarController = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+
+  const profileImage = await avatarUpdateService(req.user.id, req.file.filename);
+
+  return res.status(200).json(
+    new ApiResponse(200, "Avatar updated successfully", { profileImage })
   );
 });
 

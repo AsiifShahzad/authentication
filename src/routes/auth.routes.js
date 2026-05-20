@@ -23,7 +23,9 @@ import {
   forgotPasswordController,
   verifyResetOTPController,
   resetPasswordController,
+  avatarController,
 } from "../controllers/auth.controller.js";
+import { avatarUpload } from "../middlewares/upload.middleware.js";
 
 // SIGNUP
 router.post("/signup", validate(signupSchema), signupController);
@@ -39,6 +41,9 @@ router.post("/resend-otp", resendOTPController);
 
 // PROFILE UPDATE (Protected Route)
 router.put("/profile", authenticate, validate(profileUpdateSchema), profileUpdateController);
+
+// AVATAR UPLOAD (Protected Route)
+router.post("/profile/avatar", authenticate, avatarUpload, avatarController);
 
 // FORGOT PASSWORD FLOW
 router.post("/forgot-password", validate(forgotPasswordSchema), forgotPasswordController);

@@ -8,6 +8,7 @@ export const formatUserResponse = (user) => {
     dateOfBirth: user.dateOfBirth,
     country: user.country,
     gender: user.gender,
+    profileImage: user.profileImage,
     profileCompletionStatus: user.profileCompletionStatus,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,

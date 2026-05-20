@@ -1,12 +1,6 @@
 import ApiError from "../utils/ApiError.js";
 
-import {
-  findUserByEmail,
-  findUserByEmailWithPassword,
-  findUserByUsername,
-  findUserById,
-  createUser,
-} from "../repositories/user.repository.js";
+import path from "path";
 
 import {
   hashPassword,
@@ -14,6 +8,10 @@ import {
 } from "../utils/hash.util.js";
 
 import { formatUserResponse } from "../utils/user.util.js";
+import {
+  reconcileStaleAvatar,
+  deleteAvatarFile,
+} from "../utils/avatar.util.js";
 
 import {
   createOTP,
@@ -24,6 +22,15 @@ import { sendEmail } from "./mail.service.js";
 import { generateToken } from "../utils/jwt.util.js";
 import OTP from "../models/otp.model.js";
 import User from "../models/user.model.js";
+import {
+  findUserByEmail,
+  findUserByEmailWithPassword,
+  findUserByUsername,
+  findUserById,
+  createUser,
+  updateUserAvatar,
+  deleteUser,
+} from "../repositories/user.repository.js";
 
 //SIGNUP SERVICE
 export const signupService = async ({ username, email, password }) => {
@@ -83,9 +90,11 @@ export const loginService = async ({ email, password }) => {
     throw new ApiError(401, "Invalid email or password");
   }
 
-  const token = generateToken({ id: user._id, email: user.email });
+  const reconciledUser = await reconcileStaleAvatar(user);
 
-  return { token, user: formatUserResponse(user) };
+  const token = generateToken({ id: reconciledUser._id, email: reconciledUser.email });
+
+  return { token, user: formatUserResponse(reconciledUser) };
 };
 
 //PROFILE UPDATE SERVICE
@@ -93,11 +102,13 @@ export const profileUpdateService = async (
   userId,
   { username, dateOfBirth, country, gender }
 ) => {
-  const user = await findUserById(userId);
+  let user = await findUserById(userId);
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
+
+  user = await reconcileStaleAvatar(user);
 
   if (username !== undefined && username !== null) {
     const existingUsername = await findUserByUsername(username);
@@ -130,19 +141,36 @@ export const profileUpdateService = async (
   const finalUser = await User.findByIdAndUpdate(
     userId,
     {
-      ...(updateData.username && { username: updateData.username }),
-      ...(updateData.dateOfBirth && { dateOfBirth: updateData.dateOfBirth }),
-      ...(updateData.country && { country: updateData.country }),
-      ...(updateData.gender && { gender: updateData.gender }),
+      ...(updateData.username !== undefined && { username: updateData.username }),
+      ...(updateData.dateOfBirth !== undefined && { dateOfBirth: updateData.dateOfBirth }),
+      ...(updateData.country !== undefined && { country: updateData.country }),
+      ...(updateData.gender !== undefined && { gender: updateData.gender }),
       profileCompletionStatus: updateData.profileCompletionStatus,
     },
     { new: true }
   );
 
-  // TEMPORARY DEBUG
-  console.log("🔍 finalUser from DB:", JSON.stringify(finalUser));
-
   return formatUserResponse(finalUser);
+};
+
+//AVATAR UPDATE SERVICE
+export const avatarUpdateService = async (userId, filename) => {
+  const user = await findUserById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  user = await reconcileStaleAvatar(user);
+
+  if (user.profileImage) {
+    await deleteAvatarFile(user.profileImage);
+  }
+
+  const profileImage = `http://localhost:${process.env.PORT || 5000}/uploads/${filename}`;
+  const updatedUser = await updateUserAvatar(userId, profileImage);
+
+  return updatedUser.profileImage;
 };
 
 //FORGOT PASSWORD
@@ -193,4 +221,21 @@ export const resetPasswordService = async ({ email, otp, newPassword }) => {
   ]);
 
   return { message: "Password reset successful" };
+};
+
+// DELETE USER (no route yet — call when adding account deletion)
+export const deleteUserService = async (userId) => {
+  const user = await findUserById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.profileImage) {
+    await deleteAvatarFile(user.profileImage);
+  }
+
+  await deleteUser(userId);
+
+  return { message: "User deleted successfully" };
 };

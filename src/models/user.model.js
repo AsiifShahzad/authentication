@@ -48,11 +48,11 @@ const userSchema = new mongoose.Schema(
       enum: ["male", "female", "other"],
       default: null,
     },
-
-    profileCompletionStatus: {
-      type: Boolean,
-      default: false,
+    profileImage: {
+      type: String,
+      default: null,
     },
+
   },
   {
     timestamps: true,

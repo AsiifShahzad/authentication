@@ -27,25 +27,18 @@ export const createUser = async (payload) => {
 
 // UPDATE USER
 export const updateUser = async (id, payload) => {
-  return User.findByIdAndUpdate(id, payload, { new: true });
+  return User.findByIdAndUpdate(id, payload, { new: true }).select('-password');
 };
 
-// UPDATE USER PROFILE
-export const updateUserProfile = async (id, { username, dateOfBirth, country, gender }) => {
-  const updateData = {};
 
-  if (username !== undefined && username !== null) {
-    updateData.username = username;
-  }
-  if (dateOfBirth !== undefined && dateOfBirth !== null) {
-    updateData.dateOfBirth = dateOfBirth;
-  }
-  if (country !== undefined && country !== null) {
-    updateData.country = country;
-  }
-  if (gender !== undefined && gender !== null) {
-    updateData.gender = gender.toLowerCase();
-  }
+export const updateUserAvatar = async (userId, profileImage) => {
+  return await User.findByIdAndUpdate(
+    userId,
+    { profileImage },
+    { new: true, runValidators: true }
+  ).select('-password');
+};
 
-  return User.findByIdAndUpdate(id, updateData, { new: true });
+export const deleteUser = async (id) => {
+  return User.findByIdAndDelete(id);
 };
