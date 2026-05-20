@@ -3,10 +3,12 @@ import express from "express";
 const router = express.Router();
 
 import validate from "../middlewares/validate.middleware.js";
+import authenticate from "../middlewares/auth.middleware.js";
 
 import {
   signupSchema,
   loginSchema,
+  profileUpdateSchema,
   forgotPasswordSchema,
   verifyResetOTPSchema,
   resetPasswordSchema,
@@ -15,6 +17,7 @@ import {
 import {
   signupController,
   loginController,
+  profileUpdateController,
   verifyEmailController,
   resendOTPController,
   forgotPasswordController,
@@ -23,52 +26,23 @@ import {
 } from "../controllers/auth.controller.js";
 
 // SIGNUP
-router.post(
-  "/signup",
-  validate(signupSchema),
-  signupController
-);
+router.post("/signup", validate(signupSchema), signupController);
 
 // LOGIN
-router.post(
-  "/login",
-  validate(loginSchema),
-  loginController
-);
+router.post("/login", validate(loginSchema), loginController);
 
 // VERIFY EMAIL (OTP)
-router.post(
-  "/verify-email",
-  verifyEmailController
-);
+router.post("/verify-email", verifyEmailController);
 
 // RESEND OTP
-router.post(
-  "/resend-otp",
-  resendOTPController
-);
+router.post("/resend-otp", resendOTPController);
 
-//FORGOT PASSWORD FLOW
+// PROFILE UPDATE (Protected Route)
+router.put("/profile", authenticate, validate(profileUpdateSchema), profileUpdateController);
 
-// 1. REQUEST RESET OTP
-router.post(
-  "/forgot-password",
-  validate(forgotPasswordSchema),
-  forgotPasswordController
-);
-
-// 2. VERIFY RESET OTP
-router.post(
-  "/verify-reset-otp",
-  validate(verifyResetOTPSchema),
-  verifyResetOTPController
-);
-
-// 3. RESET PASSWORD
-router.post(
-  "/reset-password",
-  validate(resetPasswordSchema),
-  resetPasswordController
-);
+// FORGOT PASSWORD FLOW
+router.post("/forgot-password", validate(forgotPasswordSchema), forgotPasswordController);
+router.post("/verify-reset-otp", validate(verifyResetOTPSchema), verifyResetOTPController);
+router.post("/reset-password", validate(resetPasswordSchema), resetPasswordController);
 
 export default router;

@@ -5,9 +5,11 @@ const userSchema = new mongoose.Schema(
     username: {
       type: String,
       required: true,
+      unique: true,
       trim: true,
       minlength: 3,
-      maxlength: 30,
+      maxlength: 50,
+      match: /^[a-zA-Z\s]{3,50}$/,
     },
 
     email: {
@@ -26,6 +28,28 @@ const userSchema = new mongoose.Schema(
     },
 
     isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    dateOfBirth: {
+      type: String,
+      default: null,
+      match: /^\d{4}-\d{2}-\d{2}$/,
+    },
+
+    country: {
+      type: String,
+      default: null,
+    },
+
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      default: null,
+    },
+
+    profileCompletionStatus: {
       type: Boolean,
       default: false,
     },
