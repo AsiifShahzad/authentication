@@ -7,7 +7,15 @@ const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 /** Resolve on-disk path from a stored profileImage (full URL or filename). */
 export const getAvatarDiskPath = (profileImage) => {
   if (!profileImage) return null;
-  const filename = path.basename(profileImage);
+  let filename = profileImage;
+
+  try {
+    filename = new URL(profileImage).pathname;
+  } catch {
+    // Not a full URL; fall through to basename handling.
+  }
+
+  filename = decodeURIComponent(path.basename(filename));
   if (!filename || filename === "." || filename === "..") return null;
   return path.join(UPLOADS_DIR, filename);
 };
@@ -22,9 +30,11 @@ export const deleteAvatarFile = async (profileImage) => {
   const filePath = getAvatarDiskPath(profileImage);
   if (!filePath) return;
   try {
-    await fs.promises.unlink(filePath);
+    await fs.promises.rm(filePath, { force: true });
   } catch (err) {
-    if (err.code !== "ENOENT") throw err;
+    if (err.code !== "ENOENT") {
+      console.warn(`Failed to delete avatar file at ${filePath}:`, err.message);
+    }
   }
 };
 

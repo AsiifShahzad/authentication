@@ -6,10 +6,10 @@ import {
   signupService,
   loginService,
   profileUpdateService,
-  avatarUpdateService,
   forgotPasswordService,
   verifyResetOTPService,
   resetPasswordService,
+  deleteUserService,
 } from "../services/auth.service.js";
 
 import {
@@ -98,19 +98,6 @@ export const profileUpdateController = asyncHandler(async (req, res) => {
   );
 });
 
-//AVATAR CONTROLLER
-export const avatarController = asyncHandler(async (req, res) => {
-  if (!req.file) {
-    throw new ApiError(400, "Avatar file is required");
-  }
-
-  const profileImage = await avatarUpdateService(req.user.id, req.file.filename);
-
-  return res.status(200).json(
-    new ApiResponse(200, "Avatar updated successfully", { profileImage })
-  );
-});
-
 //FORGOT PASSWORD CONTROLLER
 export const forgotPasswordController = asyncHandler(async (req, res) => {
   const result = await forgotPasswordService(req.validatedData);
@@ -130,6 +117,14 @@ export const verifyResetOTPController = asyncHandler(async (req, res) => {
 //RESET PASSWORD CONTROLLER
 export const resetPasswordController = asyncHandler(async (req, res) => {
   const result = await resetPasswordService(req.validatedData);
+  return res.status(200).json(
+    new ApiResponse(200, result.message, null)
+  );
+});
+
+// DELETE ACCOUNT CONTROLLER
+export const deleteUserController = asyncHandler(async (req, res) => {
+  const result = await deleteUserService(req.user.id);
   return res.status(200).json(
     new ApiResponse(200, result.message, null)
   );

@@ -150,25 +150,32 @@ export const profileUpdateService = async (
     { new: true }
   );
 
-  return formatUserResponse(finalUser);
+  const reconciledFinal = await reconcileStaleAvatar(finalUser);
+  return formatUserResponse(reconciledFinal);
 };
 
 //AVATAR UPDATE SERVICE
 export const avatarUpdateService = async (userId, filename) => {
-  const user = await findUserById(userId);
+  let user = await findUserById(userId);
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
   user = await reconcileStaleAvatar(user);
+  const previousAvatar = user.profileImage;
+  const profileImage = `/uploads/${filename}`;
 
-  if (user.profileImage) {
-    await deleteAvatarFile(user.profileImage);
+  const updatedUser = await updateUserAvatar(userId, profileImage);
+
+  if (!updatedUser) {
+    await deleteAvatarFile(profileImage);
+    throw new ApiError(500, "Failed to update avatar");
   }
 
-  const profileImage = `http://localhost:${process.env.PORT || 5000}/uploads/${filename}`;
-  const updatedUser = await updateUserAvatar(userId, profileImage);
+  if (previousAvatar) {
+    await deleteAvatarFile(previousAvatar);
+  }
 
   return updatedUser.profileImage;
 };
@@ -223,7 +230,7 @@ export const resetPasswordService = async ({ email, otp, newPassword }) => {
   return { message: "Password reset successful" };
 };
 
-// DELETE USER (no route yet — call when adding account deletion)
+// DELETE USER
 export const deleteUserService = async (userId) => {
   const user = await findUserById(userId);
 

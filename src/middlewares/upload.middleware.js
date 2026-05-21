@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import ApiError from '../utils/ApiError.js';
 
 // Ensure uploads directory exists
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -30,8 +31,19 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-export const avatarUpload = multer({
+const multerAvatarUpload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
   fileFilter,
 }).single('avatar');
+
+/** Multer middleware with ApiError mapping (avoids generic 500s). */
+export const avatarUpload = (req, res, next) => {
+  multerAvatarUpload(req, res, (err) => {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return next(new ApiError(400, 'Image must be smaller than 2MB'));
+    }
+    return next(new ApiError(400, err.message || 'Invalid avatar file'));
+  });
+};
