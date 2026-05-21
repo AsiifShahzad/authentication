@@ -8,6 +8,8 @@ import authenticate from "../middlewares/auth.middleware.js";
 import {
   signupSchema,
   loginSchema,
+  verifyEmailSchema,
+  resendOtpSchema,
   profileUpdateSchema,
   forgotPasswordSchema,
   verifyResetOTPSchema,
@@ -33,10 +35,10 @@ router.post("/signup", validate(signupSchema), signupController);
 router.post("/login", validate(loginSchema), loginController);
 
 // VERIFY EMAIL (OTP)
-router.post("/verify-email", verifyEmailController);
+router.post("/verify-email", validate(verifyEmailSchema), verifyEmailController);
 
 // RESEND OTP
-router.post("/resend-otp", resendOTPController);
+router.post("/resend-otp", validate(resendOtpSchema), resendOTPController);
 
 // PROFILE UPDATE (Protected Route)
 router.put("/profile", authenticate, validate(profileUpdateSchema), profileUpdateController);

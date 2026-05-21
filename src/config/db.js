@@ -10,6 +10,8 @@ dotenv.config({
 });
 
 import mongoose from "mongoose";
+import User from "../models/user.model.js";
+import OTP from "../models/otp.model.js";
 
 export async function connectDB() {
   console.log(
@@ -26,6 +28,11 @@ export async function connectDB() {
     await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 10000,
     });
+
+    await Promise.all([
+      User.syncIndexes(),
+      OTP.syncIndexes(),
+    ]);
 
     console.log("MongoDB connected successfully");
     console.log("Database:", mongoose.connection.name);

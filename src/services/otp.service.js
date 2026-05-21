@@ -5,13 +5,13 @@ import { generateOTP } from "../utils/otp.util.js";
 
 //CREATE OTP
 
-export const createOTP = async (email, type = "EMAIL_VERIFICATION") => {
+export const createOTP = async (email, role, type = "EMAIL_VERIFICATION") => {
   const otp = generateOTP();
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   await OTP.findOneAndUpdate(
-    { email, type },
+    { email, role, type },
     {
       otp,
       expiresAt,
@@ -24,8 +24,8 @@ export const createOTP = async (email, type = "EMAIL_VERIFICATION") => {
 };
 
 //VERIFY OTP
-export const verifyOTP = async (email, otp, type = "EMAIL_VERIFICATION") => {
-  const record = await OTP.findOne({ email, type });
+export const verifyOTP = async (email, role, otp, type = "EMAIL_VERIFICATION") => {
+  const record = await OTP.findOne({ email, role, type });
 
   if (!record) {
     return { valid: false, message: "OTP not found" };
@@ -43,13 +43,13 @@ export const verifyOTP = async (email, otp, type = "EMAIL_VERIFICATION") => {
 };
 
 //RESEND OTP
-export const resendOTPService = async (email, type = "EMAIL_VERIFICATION") => {
+export const resendOTPService = async (email, role, type = "EMAIL_VERIFICATION") => {
   const otp = generateOTP();
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   await OTP.findOneAndUpdate(
-    { email, type },
+    { email, role, type },
     {
       otp,
       expiresAt,

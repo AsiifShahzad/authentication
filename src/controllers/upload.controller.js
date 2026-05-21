@@ -1,7 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
-import { avatarUpdateService } from "../services/auth.service.js";
+import { avatarUpdateService } from "../services/upload.service.js";
 
 export const avatarController = asyncHandler(async (req, res) => {
   if (!req.file) {

@@ -39,10 +39,13 @@ export const loginController = asyncHandler(async (req, res) => {
 
 //VERIFY EMAIL CONTROLLER
 export const verifyEmailController = asyncHandler(async (req, res) => {
-  const { email, otp } = req.body;
+  const { email, role, otp } = req.validatedData;
   const normalizedEmail = email.trim().toLowerCase();
+  const roleFilter = role === "patient"
+    ? { $or: [{ role }, { role: { $exists: false } }] }
+    : { role };
 
-  const result = await verifyOTP(normalizedEmail, otp);
+  const result = await verifyOTP(normalizedEmail, role, otp);
 
   if (!result.valid) {
     return res.status(400).json(
@@ -51,9 +54,9 @@ export const verifyEmailController = asyncHandler(async (req, res) => {
   }
 
   const [, user] = await Promise.all([
-    User.updateOne({ email: normalizedEmail }, { isVerified: true }),
-    User.findOne({ email: normalizedEmail }),
-    OTP.deleteOne({ email: normalizedEmail, type: "EMAIL_VERIFICATION" })
+    User.updateOne({ email: normalizedEmail, ...roleFilter }, { isVerified: true }),
+    User.findOne({ email: normalizedEmail, ...roleFilter }),
+    OTP.deleteOne({ email: normalizedEmail, role, type: "EMAIL_VERIFICATION" })
   ]);
 
   sendEmail({
@@ -71,15 +74,15 @@ export const verifyEmailController = asyncHandler(async (req, res) => {
 
 //RESEND OTP CONTROLLER
 export const resendOTPController = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const { email, role } = req.validatedData;
   const normalizedEmail = email.trim().toLowerCase();
 
-  const otp = await resendOTPService(normalizedEmail);
+  const otp = await resendOTPService(normalizedEmail, role);
 
   sendEmail({
     to: normalizedEmail,
     type: "OTP_VERIFICATION",
-    data: { otp, expiryMinutes: 15 },
+    data: { otp, expiryMinutes: 15, role },
   }).catch((err) => {
     console.error(`Failed to send OTP to ${normalizedEmail}:`, err);
   });

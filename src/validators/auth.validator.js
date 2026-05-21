@@ -10,12 +10,35 @@ export const signupSchema = z.object({
     .regex(/^[a-zA-Z\s]{3,50}$/, "Username must be 3-50 characters with letters and spaces only"),
   email: z.string().email("Invalid email address").trim().toLowerCase(),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(["patient", "doctor"], {
+    errorMap: () => ({ message: "Role must be either patient or doctor" }),
+  }),
 });
 
 // LOGIN VALIDATION
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address").trim().toLowerCase(),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  role: z.enum(["patient", "doctor"], {
+    errorMap: () => ({ message: "Role must be either patient or doctor" }),
+  }),
+});
+
+// VERIFY EMAIL
+export const verifyEmailSchema = z.object({
+  email: z.string().email("Invalid email address").trim().toLowerCase(),
+  role: z.enum(["patient", "doctor"], {
+    errorMap: () => ({ message: "Role must be either patient or doctor" }),
+  }),
+  otp: z.string().min(4, "OTP must be valid"),
+});
+
+// RESEND OTP
+export const resendOtpSchema = z.object({
+  email: z.string().email("Invalid email address").trim().toLowerCase(),
+  role: z.enum(["patient", "doctor"], {
+    errorMap: () => ({ message: "Role must be either patient or doctor" }),
+  }),
 });
 
 // PROFILE UPDATE VALIDATION

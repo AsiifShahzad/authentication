@@ -8,6 +8,13 @@ const otpSchema = new mongoose.Schema(
       index: true,
     },
 
+    role: {
+      type: String,
+      enum: ["patient", "doctor"],
+      required: true,
+      index: true,
+    },
+
     otp: {
       type: String,
       required: true,
@@ -34,5 +41,7 @@ const otpSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+otpSchema.index({ email: 1, role: 1, type: 1 }, { unique: true, name: "otp_identity_unique" });
 
 export default mongoose.model("OTP", otpSchema);

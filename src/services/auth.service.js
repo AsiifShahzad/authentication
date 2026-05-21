@@ -1,7 +1,5 @@
 import ApiError from "../utils/ApiError.js";
 
-import path from "path";
-
 import {
   hashPassword,
   comparePassword,
@@ -24,19 +22,29 @@ import OTP from "../models/otp.model.js";
 import User from "../models/user.model.js";
 import {
   findUserByEmail,
-  findUserByEmailWithPassword,
+  findUserByEmailAndRoleWithPassword,
   findUserByUsername,
   findUserById,
   createUser,
-  updateUserAvatar,
   deleteUser,
 } from "../repositories/user.repository.js";
 
 //SIGNUP SERVICE
-export const signupService = async ({ username, email, password }) => {
-  const existingEmail = await findUserByEmail(email);
+export const signupService = async ({ username, email, password, role }) => {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const existingEmail = await findUserByEmail(normalizedEmail);
   if (existingEmail) {
-    throw new ApiError(409, "Email already registered");
+    throw new ApiError(409, "This email is already registered.", {
+      code: "DUPLICATE_EMAIL",
+      fieldErrors: {
+        email: "Already registered",
+      },
+      existingUser: {
+        email: existingEmail.email,
+        role: existingEmail.role || "patient",
+      },
+    });
   }
 
   const existingUsername = await findUserByUsername(username);
@@ -48,8 +56,9 @@ export const signupService = async ({ username, email, password }) => {
 
   const user = await createUser({
     username,
-    email,
+    email: normalizedEmail,
     password: hashedPassword,
+    role,
     isVerified: false,
     dateOfBirth: null,
     country: null,
@@ -57,26 +66,36 @@ export const signupService = async ({ username, email, password }) => {
     profileCompletionStatus: false,
   });
 
-  const otp = await createOTP(email, "EMAIL_VERIFICATION");
+  const otp = await createOTP(normalizedEmail, role, "EMAIL_VERIFICATION");
 
   sendEmail({
-    to: email,
+    to: normalizedEmail,
     type: "OTP_VERIFICATION",
-    data: { username, otp, expiryMinutes: 15 },
+    data: { username, otp, expiryMinutes: 15, role },
   }).catch((err) => {
-    console.error(`Failed to send signup OTP to ${email}:`, err);
+    console.error(`Failed to send signup OTP to ${normalizedEmail}:`, err);
   });
 
-  const token = generateToken({ id: user._id, email: user.email });
+  const token = generateToken({ id: user._id, email: user.email, role: user.role });
 
   return { token, user: formatUserResponse(user) };
 };
 
 //LOGIN SERVICE
-export const loginService = async ({ email, password }) => {
-  const user = await findUserByEmailWithPassword(email);
+export const loginService = async ({ email, password, role }) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await findUserByEmailAndRoleWithPassword(normalizedEmail, role);
 
   if (!user) {
+    const existingUser = await findUserByEmail(normalizedEmail);
+
+    if (existingUser) {
+      throw new ApiError(403, "Selected role does not match this account.", {
+        code: "ROLE_MISMATCH",
+        expectedRole: existingUser.role || "patient",
+      });
+    }
+
     throw new ApiError(401, "Invalid email or password");
   }
 
@@ -90,9 +109,15 @@ export const loginService = async ({ email, password }) => {
     throw new ApiError(401, "Invalid email or password");
   }
 
+  const accountRole = user.role || "patient";
+
+  if (accountRole !== role) {
+    throw new ApiError(403, "Selected role does not match your account role");
+  }
+
   const reconciledUser = await reconcileStaleAvatar(user);
 
-  const token = generateToken({ id: reconciledUser._id, email: reconciledUser.email });
+  const token = generateToken({ id: reconciledUser._id, email: reconciledUser.email, role: reconciledUser.role || accountRole });
 
   return { token, user: formatUserResponse(reconciledUser) };
 };
@@ -154,48 +179,23 @@ export const profileUpdateService = async (
   return formatUserResponse(reconciledFinal);
 };
 
-//AVATAR UPDATE SERVICE
-export const avatarUpdateService = async (userId, filename) => {
-  let user = await findUserById(userId);
-
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  user = await reconcileStaleAvatar(user);
-  const previousAvatar = user.profileImage;
-  const profileImage = `/uploads/${filename}`;
-
-  const updatedUser = await updateUserAvatar(userId, profileImage);
-
-  if (!updatedUser) {
-    await deleteAvatarFile(profileImage);
-    throw new ApiError(500, "Failed to update avatar");
-  }
-
-  if (previousAvatar) {
-    await deleteAvatarFile(previousAvatar);
-  }
-
-  return updatedUser.profileImage;
-};
-
 //FORGOT PASSWORD
 export const forgotPasswordService = async ({ email }) => {
-  const user = await findUserByEmail(email);
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await findUserByEmail(normalizedEmail);
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  const otp = await createOTP(email, "PASSWORD_RESET");
+  const otp = await createOTP(normalizedEmail, user.role || "patient", "PASSWORD_RESET");
 
   sendEmail({
-    to: email,
+    to: normalizedEmail,
     type: "PASSWORD_RESET",
-    data: { username: user.username, otp, expiryMinutes: 15 },
+    data: { username: user.username, otp, expiryMinutes: 15, role: user.role || "patient" },
   }).catch((err) => {
-    console.error(`Failed to send password reset email to ${email}:`, err);
+    console.error(`Failed to send password reset email to ${normalizedEmail}:`, err);
   });
 
   return { message: "Password reset OTP sent to email" };
@@ -203,7 +203,14 @@ export const forgotPasswordService = async ({ email }) => {
 
 //VERIFY RESET OTP
 export const verifyResetOTPService = async ({ email, otp }) => {
-  const result = await verifyOTP(email, otp, "PASSWORD_RESET");
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await findUserByEmail(normalizedEmail);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const result = await verifyOTP(normalizedEmail, user.role || "patient", otp, "PASSWORD_RESET");
 
   if (!result.valid) {
     throw new ApiError(400, result.message);
@@ -214,17 +221,28 @@ export const verifyResetOTPService = async ({ email, otp }) => {
 
 //RESET PASSWORD
 export const resetPasswordService = async ({ email, otp, newPassword }) => {
-  const result = await verifyOTP(email, otp, "PASSWORD_RESET");
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await findUserByEmail(normalizedEmail);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const accountRole = user.role || "patient";
+  const result = await verifyOTP(normalizedEmail, accountRole, otp, "PASSWORD_RESET");
 
   if (!result.valid) {
     throw new ApiError(400, result.message);
   }
 
   const hashed = await hashPassword(newPassword);
+  const roleFilter = accountRole === "patient"
+    ? { $or: [{ role: accountRole }, { role: { $exists: false } }] }
+    : { role: accountRole };
 
   await Promise.all([
-    User.updateOne({ email }, { password: hashed }),
-    OTP.deleteOne({ email, type: "PASSWORD_RESET" })
+    User.updateOne({ email: normalizedEmail, ...roleFilter }, { password: hashed }),
+    OTP.deleteOne({ email: normalizedEmail, role: accountRole, type: "PASSWORD_RESET" })
   ]);
 
   return { message: "Password reset successful" };

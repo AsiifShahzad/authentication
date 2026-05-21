@@ -5,6 +5,7 @@ export const formatUserResponse = (user) => {
     username: user.username,
     email: user.email,
     isVerified: user.isVerified,
+    role: user.role || "patient",
     dateOfBirth: user.dateOfBirth,
     country: user.country,
     gender: user.gender,
